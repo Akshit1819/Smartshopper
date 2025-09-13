@@ -1,0 +1,105 @@
+1. Approach
+
+The goal of SmartShopper was to build a real-time product information pipeline with a user-friendly frontend and a scalable backend. The system had two main layers:
+
+Frontend Layer
+
+Implemented with Django templates (Home and About pages).
+
+Styled with modern fonts, background colors, and responsive design for better user experience.
+
+Entry point for users to interact with the system.
+
+Backend Layer
+
+Built using Django and Django REST Framework (DRF).
+
+Provides an API that accepts a product query (e.g., "365 WholeFoods Peanut Butter").
+
+Uses web scraping / API requests to fetch product data such as name, brand, price, and weight.
+
+Implements caching to avoid duplicate lookups and speed up responses.
+
+Supports scalability through parallel and async requests.
+
+2. Challenges
+
+App Naming Conflict
+
+Initially, the app was named products, which conflicted with a Python reserved module.
+
+This caused Django to reject the app creation.
+
+Dependency Issues
+
+Missing dependencies like djangorestframework caused ModuleNotFoundError.
+
+Needed to ensure all requirements were installed in the virtual environment.
+
+Performance Constraints
+
+Users dislike waiting, so product searches had to be optimized.
+
+Normal sequential web requests were too slow for real-time responses.
+
+Template & Frontend Issues
+
+Templates were not loading due to incorrect folder structure.
+
+Initially used Live Server extension (for static HTML) instead of Django’s runserver, which caused conflicts.
+
+3. Solutions
+
+App Naming Fix
+
+Renamed the app to productsearch, avoiding Python module conflicts.
+
+Dependency Management
+
+Installed missing libraries (djangorestframework) inside the virtual environment.
+
+Created a requirements.txt for reproducibility.
+
+Performance Optimization
+
+Used async HTTP requests with libraries like httpx or aiohttp.
+
+Implemented local caching with Django’s LocMemCache to store frequently searched results.
+
+Designed API endpoints to handle parallel fetching for faster aggregation.
+
+Template & Frontend Fixes
+
+Corrected folder structure: templates/products/home.html and about.html.
+
+Updated settings.py with a global templates/ directory.
+
+Switched from Live Server to Django’s manage.py runserver to serve templates correctly.
+
+Improved frontend design with better fonts, background colors, and responsive styles.
+
+4. Improvements & Future Work
+
+Advanced Caching
+
+Move from local memory cache to Redis for distributed caching.
+
+Data Sources
+
+Integrate multiple shopping APIs (Google Shopping, Amazon Product API, Flipkart API) for more comprehensive results.
+
+User Accounts
+
+Allow users to log in, save favorite products, and track price changes.
+
+Recommendation System
+
+Use Machine Learning to recommend similar products or cheaper alternatives.
+
+Deployment
+
+Deploy the system on cloud platforms (Heroku, Render, AWS) with a PostgreSQL backend.
+
+5. Conclusion
+
+SmartShopper successfully combines aesthetic frontend design with a scalable Django API backend to deliver real-time product information. By solving challenges in app setup, dependencies, template handling, and performance optimization, the system is now robust and ready for future expansion.
