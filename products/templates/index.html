@@ -1,0 +1,205 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartShopper 🛒</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+
+    /* Carousel */
+    .carousel-track { display: flex; transition: transform 0.5s ease-in-out; }
+
+    /* Smooth card fade-in */
+    .card { opacity: 0; transform: translateY(20px); transition: all 0.5s ease-in-out; }
+    .card.show { opacity: 1; transform: translateY(0); }
+
+    /* Placeholder font size */
+    #queryInput::placeholder { font-size: 1.5rem; }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <!-- Sticky Header -->
+  <header class="sticky top-0 z-50 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg py-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between px-6">
+      <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-wide">SmartShopper 🛒</h1>
+      <p class="text-indigo-200 mt-2 md:mt-0 text-lg md:text-xl font-medium">Find the best products instantly</p>
+    </div>
+  </header>
+
+  <!-- Hero Carousel -->
+  <section class="w-full max-w-6xl mx-auto mt-6 relative overflow-hidden rounded-xl">
+    <div class="carousel-track" id="carousel-track">
+      <img src="https://via.placeholder.com/1200x300?text=Best+Deals+This+Week" class="w-full h-64 md:h-80 object-cover rounded-xl mr-4">
+      <img src="https://via.placeholder.com/1200x300?text=Top+Electronics" class="w-full h-64 md:h-80 object-cover rounded-xl mr-4">
+      <img src="https://via.placeholder.com/1200x300?text=New+Arrivals" class="w-full h-64 md:h-80 object-cover rounded-xl">
+    </div>
+  </section>
+
+  <!-- Search bar -->
+  <div class="flex flex-col items-center mt-10 px-6">
+    <div class="flex w-full max-w-xl relative mb-4 shadow-lg rounded-lg transition-all duration-300">
+      <input id="queryInput" 
+             type="text" 
+             placeholder="Search for products..." 
+             class="flex-1 p-6 pl-16 text-2xl md:text-3xl border-none focus:ring-4 focus:ring-indigo-500 focus:outline-none rounded-l-lg transition-all duration-300 ease-in-out font-semibold"
+             onfocus="expandSearch(this)" onblur="shrinkSearch(this)">
+      <svg class="w-8 h-8 absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 transition-all duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.5 3a7.5 7.5 0 016.15 13.65z"></path>
+      </svg>
+      <button onclick="searchProducts()" 
+              class="bg-indigo-600 text-white px-10 md:px-12 font-bold hover:bg-indigo-700 transition-colors rounded-r-lg text-2xl md:text-3xl">
+        Search
+      </button>
+    </div>
+
+    <!-- Category Filters -->
+    <div id="category-filters" class="flex flex-wrap gap-3 max-w-xl justify-center mb-8">
+      <span class="px-5 py-2 bg-indigo-100 text-indigo-800 rounded-full cursor-pointer hover:bg-indigo-200 font-medium transition" onclick="filterCategory('Laptop')">Laptop</span>
+      <span class="px-5 py-2 bg-indigo-100 text-indigo-800 rounded-full cursor-pointer hover:bg-indigo-200 font-medium transition" onclick="filterCategory('Camera')">Camera</span>
+      <span class="px-5 py-2 bg-indigo-100 text-indigo-800 rounded-full cursor-pointer hover:bg-indigo-200 font-medium transition" onclick="filterCategory('Headphones')">Headphones</span>
+      <span class="px-5 py-2 bg-indigo-100 text-indigo-800 rounded-full cursor-pointer hover:bg-indigo-200 font-medium transition" onclick="filterCategory('Shoes')">Shoes</span>
+    </div>
+
+    <!-- Recent Searches -->
+    <div id="recent-searches" class="w-full max-w-6xl mb-8">
+      <h2 class="text-2xl font-semibold text-gray-700 mb-4">Recent Searches</h2>
+      <div id="recent-list" class="flex flex-wrap gap-3"></div>
+    </div>
+  </div>
+
+  <!-- Results container -->
+  <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl mx-auto mb-12"></div>
+
+  <!-- Quick View Modal -->
+  <div id="quick-view" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 max-w-lg w-full relative">
+      <button onclick="closeQuickView()" class="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+      <div id="quick-view-content"></div>
+    </div>
+  </div>
+
+  <script>
+    // Carousel
+    const carousel = document.getElementById("carousel-track");
+    let index = 0;
+    setInterval(() => {
+      index = (index + 1) % carousel.children.length;
+      carousel.style.transform = `translateX(-${index * 100}%)`;
+    }, 4000);
+
+    // Recent searches
+    const recentList = document.getElementById("recent-list");
+    let recentSearches = JSON.parse(localStorage.getItem("recentSearches") || "[]");
+    renderRecent();
+    function renderRecent() {
+      recentList.innerHTML = "";
+      recentSearches.slice(-5).reverse().forEach(term => {
+        const span = document.createElement("span");
+        span.className = "px-5 py-2 bg-indigo-100 text-indigo-800 rounded-full cursor-pointer hover:bg-indigo-200 font-medium transition";
+        span.textContent = term;
+        span.onclick = () => { document.getElementById("queryInput").value = term; searchProducts(); };
+        recentList.appendChild(span);
+      });
+    }
+
+    // Search bar animation
+    function expandSearch(input) { input.classList.add("shadow-xl"); }
+    function shrinkSearch(input) { input.classList.remove("shadow-xl"); }
+
+    // Search
+    async function searchProducts() {
+      const query = document.getElementById("queryInput").value.trim();
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+      if (!query) {
+        resultsDiv.innerHTML = `<p class="text-red-500 text-center col-span-full text-lg font-medium">Please enter a product name!</p>`;
+        return;
+      }
+
+      if (!recentSearches.includes(query)) {
+        recentSearches.push(query);
+        localStorage.setItem("recentSearches", JSON.stringify(recentSearches));
+        renderRecent();
+      }
+
+      resultsDiv.innerHTML = `<div class="col-span-full flex justify-center items-center py-10">
+        <svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+      </div>`;
+
+      try {
+        const res = await fetch(`/api/search/?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (!data.results || data.results.length === 0) {
+          resultsDiv.innerHTML = `<p class="text-red-500 text-center col-span-full text-lg font-medium">No results found for "${query}".</p>`;
+          return;
+        }
+
+        resultsDiv.innerHTML = "";
+        data.results.forEach((product, i) => {
+          const div = document.createElement("div");
+          div.className = "card bg-white shadow-lg rounded-2xl overflow-hidden flex flex-col hover:scale-105 hover:shadow-2xl transition-all duration-500 cursor-pointer";
+          div.innerHTML = `
+            <img src="${product.image || 'https://via.placeholder.com/400x250?text=No+Image'}" alt="${product.name}" class="w-full h-52 md:h-64 object-cover">
+            <div class="p-5 flex flex-col flex-1">
+              <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-1 leading-tight">${product.name}</h2>
+              <p class="text-gray-600 mb-1 text-lg md:text-xl">Brand: <span class="font-medium">${product.brand || "N/A"}</span></p>
+              <p class="text-gray-600 mb-2 text-lg md:text-xl">Weight: <span class="font-medium">${product.total_weight || "N/A"}</span></p>
+              <div class="flex items-center mb-3 text-lg md:text-xl">
+                <span class="text-yellow-400 mr-2">★★★★☆</span>
+                <span class="text-gray-500 text-base">(${Math.floor(Math.random()*100 + 1)} reviews)</span>
+              </div>
+              <span class="inline-block bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold text-lg md:text-xl px-3 py-2 rounded-full mb-4">
+                ${product.price} ${product.currency || ""}
+              </span>
+            </div>`;
+          div.classList.add("show");
+          resultsDiv.appendChild(div);
+        });
+
+      } catch (err) {
+        console.error(err);
+        resultsDiv.innerHTML = `<p class="text-red-500 text-center col-span-full text-lg font-medium">Error fetching results. Please try again later.</p>`;
+      }
+    }
+
+    // Filter by category
+    function filterCategory(category) {
+      document.getElementById("queryInput").value = category;
+      searchProducts();
+    }
+
+    // Quick View Modal
+    const modal = document.getElementById("quick-view");
+    const modalContent = document.getElementById("quick-view-content");
+    function showQuickView(product) {
+      modalContent.innerHTML = `
+        <img src="${product.image || 'https://via.placeholder.com/400x250?text=No+Image'}" class="w-full h-64 object-cover rounded-lg mb-4">
+        <h2 class="text-2xl md:text-3xl font-bold mb-2">${product.name}</h2>
+        <p class="text-gray-700 mb-2 text-lg md:text-xl">Brand: ${product.brand || "N/A"}</p>
+        <p class="text-gray-700 mb-2 text-lg md:text-xl">Weight: ${product.total_weight || "N/A"}</p>
+        <p class="text-indigo-600 font-bold mb-4 text-xl md:text-2xl">${product.price} ${product.currency || ""}</p>
+        <a href="${product.url}" target="_blank" class="block bg-indigo-600 text-white font-semibold py-3 text-center rounded-lg hover:bg-indigo-700 transition-colors text-lg md:text-xl">View Product</a>
+      `;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+    function closeQuickView() { modal.classList.add("hidden"); modal.classList.remove("flex"); }
+  </script>
+</body>
+</html>

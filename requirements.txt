@@ -1,0 +1,5 @@
+Django>=4.2
+httpx>=0.24.1
+beautifulsoup4>=4.12.2
+django-redis>=5.2.0  # optional, only if you want Redis cache
+python-dotenv>=1.0.0
